@@ -1,0 +1,82 @@
+﻿@page "/rick"
+@inject PersonajeServicios personajeServicios
+
+<h3>Personajes</h3>
+
+@if (personajes == null)
+{
+    <p>Cargando personajes...</p>
+}
+else
+{
+    <div class="mb-3">
+        <input @bind="filtroNombre" class="form-control mb-2" placeholder="Filtrar por nombre" />
+        <input @bind="filtroEspecie" class="form-control mb-2" placeholder="Filtrar por especie" />
+        <input @bind="filtroEstado" class="form-control mb-3" placeholder="Filtrar por estado" />
+        <h5>Total Puntaje: @puntajes.Values.Sum()</h5>
+    </div>
+
+    <div class="row">
+        @foreach (var p in personajesFiltrados)
+        {
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
+                <div class="card h-100">
+                    <img src="@p.image" class="card-img-top" alt="@p.name" />
+                    <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">@p.name</h5>
+                        <p class="card-text">@p.species - @p.status</p>
+
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between">
+                                <button class="btn btn-success btn-sm" @onclick="() => CambiarPuntaje(p.id, 1)">👍 Like</button>
+                                <button class="btn btn-danger btn-sm" @onclick="() => CambiarPuntaje(p.id, -1)">👎 Dislike</button>
+                            </div>
+                            <p class="mt-2 mb-0">Puntaje: @puntajes[p.id]</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    // Lista de personajes
+    private List<RickyMorty.Modelos.Personaje> personajes;
+
+    // Filtros
+    private string filtroNombre = string.Empty;
+    private string filtroEspecie = string.Empty;
+    private string filtroEstado = string.Empty;
+
+    // Puntajes por personaje
+    private Dictionary<int, int> puntajes = new();
+
+    // Lista filtrada dinámicamente
+    private IEnumerable<RickyMorty.Modelos.Personaje> personajesFiltrados =>
+        personajes.Where(p =>
+            p.name.Contains(filtroNombre, StringComparison.OrdinalIgnoreCase) &&
+            p.species.Contains(filtroEspecie, StringComparison.OrdinalIgnoreCase) &&
+            p.status.Contains(filtroEstado, StringComparison.OrdinalIgnoreCase));
+
+    // Al iniciar
+    protected override async Task OnInitializedAsync()
+    {
+        personajes = await personajeServicios.GetCharactersAsync();
+
+        // Inicializa todos los puntajes en 0
+        foreach (var p in personajes)
+        {
+            puntajes[p.id] = 0;
+        }
+    }
+
+    // Método para aumentar o disminuir puntaje
+    private void CambiarPuntaje(int personajeId, int cambio)
+    {
+        if (puntajes.ContainsKey(personajeId))
+        {
+            puntajes[personajeId] += cambio;
+        }
+    }
+}
